@@ -3,58 +3,13 @@
 Ask questions about financial news and get short answers with their sources.
 The answers come from the Reuters R8 news dataset. It works in English and Arabic.
 
-## System Architecture
+## Architecture
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  R8 dataset  │────>│   Docling    │────>│    Qwen3     │────>│    Chroma    │
-│  PDF / DOCX  │     │   chunking   │     │  embeddings  │     │   vector DB  │
-└──────────────┘     └──────────────┘     └──────────────┘     └──────┬───────┘
-                                                                      │
-                                                                      v
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Web UI /   │<───>│   FastAPI    │<───>│  LangGraph   │<───>│ bge reranker │
-│   terminal   │     │              │     │  chat flow   │     │              │
-└──────────────┘     └──────┬───────┘     └──────┬───────┘     └──────────────┘
-                            │                    │
-                            v                    v
-                     ┌──────────────┐     ┌──────────────┐
-                     │   Postgres   │     │   Gemma 4    │
-                     │ chat threads │     │ (OpenRouter) │
-                     └──────────────┘     └──────────────┘
-```
+![Architecture](docs/architecture.png)
 
-## Chat Flow
+## How it works
 
-```
-              question
-                 │
-       ┌─────────┴─────────┐
-       v                   v
- ┌───────────┐       ┌───────────┐
- │input guard│       │  rewrite  │
- └─────┬─────┘       └─────┬─────┘
-       │                   v
-       │             ┌───────────┐
-       │             │  search   │
-       │             └─────┬─────┘
-       └─────────┬─────────┘
-                 v
-          ┌─────────────┐
-          │relevance    │───> refuse / "not found"
-          │gate         │
-          └──────┬──────┘
-                 v
-          ┌─────────────┐
-          │  generate   │
-          └──────┬──────┘
-                 v
-          ┌─────────────┐
-          │output guard │
-          └──────┬──────┘
-                 v
-          answer + sources
-```
+![How it works](docs/flow.png)
 
 ## Models
 
