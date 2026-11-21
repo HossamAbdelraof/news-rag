@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: news_rag
+    ports:
+      - "5432:5432"
     volumes:
       - chat_threads:/var/lib/postgresql/data
     healthcheck:
