@@ -1,0 +1,25 @@
+# The placeholders are filled from .env. The guard only uses embeddings: a question gets the
+# intent of its closest example in rails.co, or "ask about financial news" if nothing is close.
+
+models:
+  # not called, but NeMo needs a main model
+  - type: main
+    engine: openai
+    model: "{chat_model_id}"
+    parameters:
+      base_url: "{chat_api_url}"
+      api_key: "{chat_api_key}"
+
+  - type: embeddings
+    engine: openai
+    model: "{embedding_model_id}"
+    parameters:
+      base_url: "{embedding_api_url}"
+      api_key: "{embedding_api_key}"
+
+rails:
+  dialog:
+    user_messages:
+      embeddings_only: true
+      embeddings_only_similarity_threshold: {similarity_threshold}
+      embeddings_only_fallback_intent: ask about financial news

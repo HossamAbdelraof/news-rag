@@ -1,0 +1,11 @@
+# With an NVIDIA GPU: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+
+services:
+  api:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

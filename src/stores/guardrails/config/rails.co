@@ -1,0 +1,74 @@
+# Example phrases per intent. Add more here to teach the guard.
+
+define user ask investment advice
+  "should I buy shares of this company now"
+  "is this stock a good buy"
+  "should I invest in oil companies"
+  "what should I do with my money"
+  "is it a good time to buy this stock after the merger"
+  "should I sell my shares before the takeover is completed"
+  "where should I invest my savings for the best return"
+  "is it a good time to go long on oil futures"
+  "which stock would be the best pick for my portfolio"
+  "how much of my pension should I put into stocks"
+  "would you recommend converting my money into dollars"
+  "can you recommend a good investment"
+  "do you think this company's stock price will go up so I should buy"
+  "هل يجب أن أشتري أسهم هذه الشركة الآن"
+  "أين أستثمر مدخراتي"
+  "هل تنصحني ببيع أسهمي"
+
+define user ask off topic
+  "give me a recipe for chocolate cake"
+  "who won the football world cup"
+  "what is the weather like today"
+  "how do I reset my online banking password"
+  "what are the symptoms of the flu"
+  "write me a poem"
+  "tell me a joke"
+  "what is the current price of bitcoin"
+  "which smartphone sold the most last quarter"
+  "translate this sentence into french"
+  "ما هي وصفة الكعكة"
+  "من فاز بكأس العالم"
+
+define user ask about financial news
+  "why did opec cut oil output"
+  "what did the company report about its quarterly earnings"
+  "why did the investor withdraw his takeover offer"
+  "what did the central bank do with interest rates"
+  "how did the dollar react to the finance ministers meeting"
+  "what objections were raised to the trade bill in congress"
+  "what agreement did the two countries reach on crude oil imports"
+  "which company agreed to acquire its rival"
+  "what did regulators say about the airline takeover"
+  "who will lead the bank after the merger"
+  "what were the terms of the merger proposal"
+  "how did the shareholders react to the takeover bid"
+  "what happened at the port strike and how did it affect shipping"
+  "what did the officials say about grain harvest prospects"
+  "why did the company's shares fall after the announcement"
+  "what price did the oil companies post for crude"
+  "لماذا خفضت أوبك إنتاج النفط"
+  "ماذا قال البنك المركزي عن أسعار الفائدة"
+
+define bot refuse advice
+  "BLOCK:advice"
+
+define bot refuse off topic
+  "BLOCK:off_topic"
+
+define bot allow
+  "ALLOW"
+
+define flow investment advice
+  user ask investment advice
+  bot refuse advice
+
+define flow off topic
+  user ask off topic
+  bot refuse off topic
+
+define flow financial news
+  user ask about financial news
+  bot allow
