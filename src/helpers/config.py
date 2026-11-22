@@ -22,7 +22,9 @@ class EmbeddingConfig(BaseConfig):
     EMBEDDING_API_URL: str = "https://openrouter.ai/api/v1"
     EMBEDDING_API_KEY: str = ""
     EMBEDDING_MODEL_ID: str = "qwen/qwen3-embedding-4b"
-    EMBEDDING_QUERY_PREFIX: str = ""
+    # Qwen3 embeddings expect an instruction before the query (the documents were indexed without one)
+    EMBEDDING_QUERY_PREFIX: str = ("Instruct: Given a question about financial news, retrieve Reuters news "
+                                   "articles that answer it\nQuery: ")
     EMBEDDING_DOCUMENT_PREFIX: str = ""
     EMBEDDING_BATCH_SIZE: int = 64
     CHAT_API_KEY: str = ""  # used when EMBEDDING_API_KEY is empty (both are OpenRouter)
@@ -35,16 +37,27 @@ class EmbeddingConfig(BaseConfig):
 
 
 class VectorDBConfig(BaseConfig):
-    VECTOR_DB_PATH: str = "chroma"
+    VECTOR_DB_PROVIDER: str = "chroma"  # chroma (read/write, local) | numpy (read-only export, for Vercel)
+    VECTOR_DB_PATH: str = "chroma"      # chroma: folder in src/assets/database | numpy: folder in the project root
     VECTOR_DB_COLLECTION_PREFIX: str = "news"
 
 
 class RerankerConfig(BaseConfig):
     RERANKER_ENABLED: bool = True
-    RERANKER_MODEL_ID: str = "BAAI/bge-reranker-v2-m3"
+    RERANKER_PROVIDER: str = "openrouter"  # openrouter (API, no torch needed) | local (sentence-transformers)
+    RERANKER_MODEL_ID: str = "qwen/qwen3-reranker-8b"
+    RERANKER_API_URL: str = "https://openrouter.ai/api/v1"
+    RERANKER_API_KEY: str = ""
+    CHAT_API_KEY: str = ""  # used when RERANKER_API_KEY is empty (both are OpenRouter)
     RERANKER_DEVICE: str = "auto"  # auto | cuda | cpu
     RERANKER_MAX_LENGTH: int = 1024
     RERANKER_BATCH_SIZE: int = 16
+
+    @model_validator(mode="after")
+    def use_chat_key(self):
+        if not self.RERANKER_API_KEY:
+            self.RERANKER_API_KEY = self.CHAT_API_KEY
+        return self
 
 
 class SearchConfig(BaseConfig):
@@ -89,6 +102,8 @@ class LangfuseConfig(BaseConfig):
 
 
 class DBConfig(BaseConfig):
+    # A full URL (Neon / Supabase / Vercel Postgres) wins over the parts below.
+    POSTGRES_URL: str = ""
     POSTGRES_USERNAME: str = "postgres"
     POSTGRES_PASSWORD: str = ""
     POSTGRES_HOST: str = "localhost"
@@ -97,8 +112,29 @@ class DBConfig(BaseConfig):
 
     @property
     def url(self) -> str:
+        if self.POSTGRES_URL:
+            return self._hosted_url()[0]
         return (f"postgresql+asyncpg://{self.POSTGRES_USERNAME}:{self.POSTGRES_PASSWORD}"
                 f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_MAIN_DATABASE}")
+
+    @property
+    def connect_args(self) -> dict:
+        return self._hosted_url()[1] if self.POSTGRES_URL else {}
+
+    def _hosted_url(self) -> tuple[str, dict]:
+        """postgres://...?sslmode=require -> asyncpg URL + connect args (asyncpg does not read sslmode)."""
+        from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+        parts = urlsplit(self.POSTGRES_URL)
+        query = dict(parse_qsl(parts.query))
+        sslmode = query.pop("sslmode", None)
+        query.pop("channel_binding", None)
+        url = urlunsplit(("postgresql+asyncpg", parts.netloc, parts.path, urlencode(query), ""))
+        # statement cache off: hosted poolers (PgBouncer) do not keep prepared statements
+        args = {"statement_cache_size": 0}
+        if sslmode and sslmode != "disable":
+            args["ssl"] = "require"
+        return url, args
 
 
 class Settings(BaseSettings):

@@ -2,7 +2,7 @@ import re
 
 from src.helpers.config import VectorDBConfig
 
-from .providers import ChromaDBProvider
+from .providers import NumpyProvider
 from .VectorDBInterface import VectorDBInterface
 
 
@@ -12,6 +12,9 @@ class VectorDBProviderFactory:
         self.db_path = db_path
 
     def create(self) -> VectorDBInterface:
+        if self.config.VECTOR_DB_PROVIDER == "numpy":
+            return NumpyProvider(path=self.db_path)
+        from .providers.ChromaDBProvider import ChromaDBProvider
         return ChromaDBProvider(path=self.db_path)
 
     def collection_name(self, embedding_model_id: str) -> str:

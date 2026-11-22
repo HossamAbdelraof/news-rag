@@ -19,7 +19,7 @@ WORKDIR /app
 # dependencies first, so they are cached
 COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-dev --no-install-project --extra local
 
 # reranker model
 RUN uv run --no-sync python -c "from huggingface_hub import snapshot_download; \

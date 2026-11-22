@@ -97,3 +97,46 @@ class ChatHistoryModel:
         messages = await self.get_messages(thread_id)
         return [(u["content"], a["content"]) for u, a in zip(messages[::2], messages[1::2])
                 if a["details"].get("status") == "answered"]
+
+
+class InMemoryChatHistory:
+    """Same methods as ChatHistoryModel, kept in memory. Used when Postgres is not reachable
+    (e.g. on Vercel without a database): threads work but are lost when the instance restarts."""
+
+    def __init__(self):
+        self.threads: dict[str, dict] = {}
+        self.messages: dict[str, list[dict]] = {}
+
+    async def create_thread(self, title: str = "New chat") -> dict:
+        now = _now().isoformat(timespec="seconds")
+        thread = {"id": uuid.uuid4().hex[:12], "title": title, "created_at": now, "updated_at": now}
+        self.threads[thread["id"]], self.messages[thread["id"]] = thread, []
+        return dict(thread)
+
+    async def get_thread(self, thread_id: str) -> dict | None:
+        thread = self.threads.get(thread_id)
+        return dict(thread) if thread else None
+
+    async def list_threads(self, limit: int = 50) -> list[dict]:
+        rows = sorted(self.threads.values(), key=lambda t: t["updated_at"], reverse=True)[:limit]
+        return [{**t, "questions": len(self.messages[t["id"]]) // 2} for t in rows]
+
+    async def delete_thread(self, thread_id: str) -> bool:
+        self.messages.pop(thread_id, None)
+        return self.threads.pop(thread_id, None) is not None
+
+    async def add_turn(self, thread_id: str, question: str, answer: str, details: dict) -> None:
+        thread = self.threads.get(thread_id)
+        if thread is None:
+            return
+        now = _now().isoformat(timespec="seconds")
+        if not self.messages[thread_id]:
+            thread["title"] = question[:80]
+        thread["updated_at"] = now
+        self.messages[thread_id] += [{"role": "user", "content": question, "details": {}, "created_at": now},
+                                     {"role": "assistant", "content": answer, "details": details, "created_at": now}]
+
+    async def get_messages(self, thread_id: str) -> list[dict]:
+        return [dict(m) for m in self.messages.get(thread_id, [])]
+
+    get_history = ChatHistoryModel.get_history

@@ -1548,9 +1548,8 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "asyncpg" },
-    { name = "chromadb" },
-    { name = "docling" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "langchain" },
     { name = "langchain-openai" },
     { name = "langfuse" },
@@ -1560,10 +1559,16 @@ dependencies = [
     { name = "openai" },
     { name = "psutil" },
     { name = "pydantic-settings" },
-    { name = "sentence-transformers" },
     { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "torch" },
     { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+local = [
+    { name = "chromadb" },
+    { name = "docling" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
 ]
 
 [package.dev-dependencies]
@@ -1575,9 +1580,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.32.0" },
-    { name = "chromadb", specifier = ">=1.0" },
-    { name = "docling", specifier = ">=2.0" },
+    { name = "chromadb", marker = "extra == 'local'", specifier = ">=1.0" },
+    { name = "docling", marker = "extra == 'local'", specifier = ">=2.0" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "langchain", specifier = ">=1.5.2" },
     { name = "langchain-openai", specifier = ">=1.8.5" },
     { name = "langfuse", specifier = ">=5.2.0" },
@@ -1587,11 +1593,12 @@ requires-dist = [
     { name = "openai", specifier = ">=1.50" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "pydantic-settings", specifier = ">=2.6" },
-    { name = "sentence-transformers", specifier = ">=5.0" },
+    { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=5.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.9" },
-    { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torch", marker = "extra == 'local'", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu128" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
+provides-extras = ["local"]
 
 [package.metadata.requires-dev]
 dev = [

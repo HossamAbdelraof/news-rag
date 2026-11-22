@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.controllers import BaseController, ChatController, NLPController
 from src.helpers.config import Settings, get_settings
-from src.models import ChatHistoryModel
+from src.models import ChatHistoryModel, InMemoryChatHistory
 from src.routes import base, chat, nlp
 from src.stores.database import PostgresProvider
 from src.stores.guardrails import GuardrailsProvider
@@ -28,7 +28,7 @@ class Clients:
     reranker: RerankerInterface | None
     collection: str
     monitoring: LangfuseProvider
-    history: ChatHistoryModel | None = None  # None when Postgres is down
+    history: ChatHistoryModel | InMemoryChatHistory | None = None
     db: PostgresProvider | None = None
     _chat: ChatController | None = field(default=None, repr=False)
 
@@ -48,8 +48,7 @@ class Clients:
 async def build_clients() -> Clients:
     settings = get_settings()
     embedding = LLMProviderFactory(settings.embedding).create_embedding_client()
-    vectordb_factory = VectorDBProviderFactory(settings.vectordb,
-                                               BaseController().get_database_path(settings.vectordb.VECTOR_DB_PATH))
+    vectordb_factory = VectorDBProviderFactory(settings.vectordb, BaseController().get_vectordb_path())
     vectordb = vectordb_factory.create()
     await vectordb.connect()
     clients = Clients(settings=settings, embedding=embedding, vectordb=vectordb,
@@ -58,13 +57,14 @@ async def build_clients() -> Clients:
                       monitoring=LangfuseProvider(settings.langfuse))
 
     # Postgres is optional: without it only the saved chat threads are missing.
-    db = PostgresProvider(settings.db.url)
+    db = PostgresProvider(settings.db.url, settings.db.connect_args)
     try:
         await db.connect()
         clients.db, clients.history = db, ChatHistoryModel(db.sessions)
         await clients.history.create_tables(db.engine)
     except Exception as e:
-        logger.warning("Postgres not reachable (%s): chat threads are off", type(e).__name__)
+        logger.warning("Postgres not reachable (%s): chat threads are kept in memory only", type(e).__name__)
+        clients.history = InMemoryChatHistory()
     return clients
 
 

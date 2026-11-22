@@ -13,3 +13,11 @@ class BaseController:
         path = self.database_path / name
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
+
+    def get_vectordb_path(self) -> str:
+        """Chroma lives in src/assets/database (created if missing); the read-only numpy export
+        is a folder in the project root and is never created (the disk may be read-only)."""
+        config = self.settings.vectordb
+        if config.VECTOR_DB_PROVIDER == "numpy":
+            return str(self.project_root / config.VECTOR_DB_PATH)
+        return self.get_database_path(config.VECTOR_DB_PATH)

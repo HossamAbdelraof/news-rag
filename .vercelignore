@@ -1,0 +1,16 @@
+# Not needed to answer questions on Vercel (keeps the function under the 500 MB limit).
+.venv
+.env
+.env.*
+!.env.vercel.example
+src/assets
+datasets
+data
+docs
+tests
+scripts
+Dockerfile
+docker-compose*.yml
+*.log
+**/__pycache__
+.pytest_cache
